@@ -1,18 +1,20 @@
 import redis
-import json
 import os
+import json
 
-redis_client = redis.Redis(
-    host=os.getenv("REDIS_HOST", "redis"),
-    port=6379,
+redis_client = redis.Redis.from_url(
+    os.getenv("REDIS_URL"),
     decode_responses=True
 )
 
-CACHE_TTL = 86400
+CACHE_TTL = int(os.getenv("CACHE_TTL", 86400))
 
 
 def get_cache(video_id):
-    data = redis_client.get(video_id)
+
+    key = f"yt_transcript:{video_id}"
+
+    data = redis_client.get(key)
 
     if data:
         return json.loads(data)
@@ -21,8 +23,11 @@ def get_cache(video_id):
 
 
 def set_cache(video_id, value):
+
+    key = f"yt_transcript:{video_id}"
+
     redis_client.setex(
-        video_id,
+        key,
         CACHE_TTL,
         json.dumps(value)
     )
